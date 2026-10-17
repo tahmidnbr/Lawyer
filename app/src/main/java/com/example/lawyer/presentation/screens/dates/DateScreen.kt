@@ -100,6 +100,24 @@ fun DateScreen(
     val todayMonth = calendar.get(Calendar.MONTH)
     val todayDay   = calendar.get(Calendar.DAY_OF_MONTH)
 
+
+    // ── Day-of-week labels ────────────────────────
+    val dayLabels = listOf("M","T","W","T","F","S","S")
+    Row(modifier = Modifier.fillMaxWidth()) {
+        dayLabels.forEachIndexed { index, label ->
+            // Indices 4 ("F") and 5 ("S") correspond to Friday and Saturday in this list
+            val isWeekend = index == 4 || index == 5
+            Text(
+                text = label,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isWeekend) Color.Red else PrimaryBlack.copy(alpha = 0.4f),
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+
     val proceedingDays = remember(hearings,  displayedYear,  displayedMonth){
         vm.hearingDaysFor(hearings, displayedYear, displayedMonth)
     }
@@ -301,37 +319,31 @@ private fun MonthGrid(
     onDaySelected: (Int) -> Unit
 ) {
     val cal = Calendar.getInstance().apply { set(year, month, 1) }
-    val firstDow = cal.get(Calendar.DAY_OF_WEEK).let { if (it == 1) 7 else it - 1 }
+    // Proper 0-indexed Monday start (Monday = 0, ..., Friday = 4, Saturday = 5, Sunday = 6)
+    val firstDow = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
     val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
 
-    // Previous month days to show
     val prevCal = Calendar.getInstance().apply { set(year, month, 1) }.also { it.add(Calendar.MONTH, -1) }
     val daysInPrevMonth = prevCal.getActualMaximum(Calendar.DAY_OF_MONTH)
-
-    // Always 6 rows × 7 cols = 42 cells
-    val totalCells = 42
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         for (row in 0 until 6) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 for (col in 0..6) {
                     val cellIndex = row * 7 + col
-                    val offset    = cellIndex - (firstDow - 1)
+                    val offset = cellIndex - firstDow
 
                     val (day, isCurrentMonth) = when {
-                        offset < 0 ->
-                            // Days from previous month
-                            Pair(daysInPrevMonth + offset + 1, false)
-                        offset >= daysInMonth ->
-                            // Days from next month
-                            Pair(offset - daysInMonth + 1, false)
-                        else ->
-                            Pair(offset + 1, true)
+                        offset < 0 -> Pair(daysInPrevMonth + offset + 1, false)
+                        offset >= daysInMonth -> Pair(offset - daysInMonth + 1, false)
+                        else -> Pair(offset + 1, true)
                     }
 
-                    val event    = if (isCurrentMonth) events.find { it.day == day } else null
-                    val isToday  = isCurrentMonth && day == todayDay &&
-                            month == todayMonth && year == todayYear
+                    // Friday = 4, Saturday = 5
+                    val isWeekend = col == 4 || col == 5
+
+                    val event = if (isCurrentMonth) events.find { it.day == day } else null
+                    val isToday = isCurrentMonth && day == todayDay && month == todayMonth && year == todayYear
                     val isSelected = isCurrentMonth && day == selectedDay
 
                     Box(
@@ -339,13 +351,14 @@ private fun MonthGrid(
                         contentAlignment = Alignment.Center
                     ) {
                         DayCell(
-                            day              = day,
-                            isToday          = isToday,
-                            isSelected       = isSelected,
-                            isCurrentMonth   = isCurrentMonth,   // ← add this param
-                            hasHearing       = event?.hasHearing == true,
-                            hasFiling        = event?.hasFiling  == true,
-                            onClick          = { if (isCurrentMonth) onDaySelected(day) }
+                            day = day,
+                            isToday = isToday,
+                            isSelected = isSelected,
+                            isCurrentMonth = isCurrentMonth,
+                            isWeekend = isWeekend,
+                            hasHearing = event?.hasHearing == true,
+                            hasFiling = event?.hasFiling == true,
+                            onClick = { if (isCurrentMonth) onDaySelected(day) }
                         )
                     }
                 }
@@ -354,7 +367,6 @@ private fun MonthGrid(
     }
 }
 
-// ── Week grid (shows the week containing selectedDay) ─────────
 @Composable
 private fun WeekGrid(
     year: Int, month: Int,
@@ -364,8 +376,9 @@ private fun WeekGrid(
     onDaySelected: (Int) -> Unit
 ) {
     val cal = Calendar.getInstance().apply { set(year, month, selectedDay) }
-    val dow = cal.get(Calendar.DAY_OF_WEEK).let { if (it == 1) 7 else it - 1 }
-    val weekStart = selectedDay - (dow - 1)
+    // Proper 0-indexed Monday start
+    val dow = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
+    val weekStart = selectedDay - dow
     val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
 
     Row(modifier = Modifier.fillMaxWidth()) {
@@ -377,6 +390,9 @@ private fun WeekGrid(
                     month == todayMonth && year == todayYear
             val isSelected = isValid && day == selectedDay
 
+            // Friday = 4, Saturday = 5
+            val isWeekend = col == 4 || col == 5
+
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 if (isValid) {
                     DayCell(
@@ -384,6 +400,7 @@ private fun WeekGrid(
                         isToday    = isToday,
                         isSelected = isSelected,
                         isCurrentMonth = true,
+                        isWeekend  = isWeekend,
                         hasHearing = event?.hasHearing == true,
                         hasFiling  = event?.hasFiling  == true,
                         onClick    = { onDaySelected(day) }
@@ -400,7 +417,8 @@ private fun DayCell(
     day: Int,
     isToday: Boolean,
     isSelected: Boolean,
-    isCurrentMonth: Boolean,                // ← add
+    isCurrentMonth: Boolean,
+    isWeekend: Boolean,                     // ← Added parameter
     hasHearing: Boolean,
     hasFiling: Boolean,
     onClick: () -> Unit
@@ -426,10 +444,11 @@ private fun DayCell(
             fontSize = 13.sp,
             fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
             color = when {
-                isSelected       -> PrimaryWhite
-                isToday          -> PrimaryGold
-                !isCurrentMonth  -> PrimaryBlack.copy(alpha = 0.2f)  // ← dimmed overflow
-                else             -> PrimaryBlack
+                isSelected      -> PrimaryWhite
+                isToday         -> PrimaryGold
+                !isCurrentMonth -> PrimaryBlack.copy(alpha = 0.2f)
+                isWeekend       -> Color.Red             // ← Weekend color (Off-day in Bangladesh)
+                else            -> PrimaryBlack
             }
         )
 
