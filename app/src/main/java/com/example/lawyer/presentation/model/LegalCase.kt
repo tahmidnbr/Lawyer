@@ -17,7 +17,8 @@ data class LegalCase(
     val caseFee: Double? =  null,
 
     val isPriority: Boolean = false,         // home screen filter
-    val creatingDate: Long = System.currentTimeMillis()
+    val creatingDate: Long = System.currentTimeMillis(),
+    val imageUri: String? = null
 ){
     val title: String get() = "$plaintiff vs $defendant"
 }

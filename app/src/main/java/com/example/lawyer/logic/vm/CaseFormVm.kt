@@ -1,5 +1,6 @@
 package com.example.lawyer.logic.vm
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,9 +23,10 @@ data class CaseFormUiState(
     val defendant: String = "",
     val representing: String = "",
     val courtName: String = "",
-    val caseFee: String = "",
+    val caseFee: String = "",       // Kept as String for text input flexibility
     val caseType: String = "",
     val isPriority: Boolean = false,
+    val selectedImageUri: String? = null, // Stored as String? for Room compatibility
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 ) {
@@ -61,16 +63,17 @@ class CaseFormVm(
                     if (case != null) {
                         _uiState.update {
                             it.copy(
-                                caseId      = case.id,
-                                caseNo      = case.caseNo,
-                                plaintiff   = case.plaintiff,
-                                defendant   = case.defendant,
-                                representing = case.representing,
-                                courtName   = case.courtName,
-                                caseFee     = case.caseFee?.toString() ?: "",
-                                caseType    = case.caseType,
-                                isPriority  = case.isPriority,
-                                isLoading   = false
+                                caseId        = case.id,
+                                caseNo        = case.caseNo,
+                                plaintiff     = case.plaintiff,
+                                defendant     = case.defendant,
+                                representing  = case.representing,
+                                courtName     = case.courtName,
+                                caseFee       = case.caseFee?.toString() ?: "",
+                                caseType      = case.caseType,
+                                isPriority    = case.isPriority,
+                                selectedImageUri = case.imageUri, // Load saved image URI if present
+                                isLoading     = false
                             )
                         }
                     } else {
@@ -93,6 +96,9 @@ class CaseFormVm(
     fun onCaseTypeChange(v: String)     = _uiState.update { it.copy(caseType = v) }
     fun onPriorityToggle()              = _uiState.update { it.copy(isPriority = !it.isPriority) }
 
+    // Image selection updater
+    fun onImageSelected(uri: Uri?)      = _uiState.update { it.copy(selectedImageUri = uri?.toString()) }
+
     // ── Save ──────────────────────────────────────────────────
     fun saveCase() {
         val state = _uiState.value
@@ -112,7 +118,8 @@ class CaseFormVm(
                     courtName = state.courtName.trim(),
                     caseFee = state.caseFee.toDoubleOrNull(),
                     caseType = state.caseType.trim(),
-                    isPriority = state.isPriority
+                    isPriority = state.isPriority,
+                    imageUri = state.selectedImageUri // Save the image URI/path to entity
                 )
                 if (state.isEditMode) { repo.updateCase(case); null }
                 else repo.insertCase(case)

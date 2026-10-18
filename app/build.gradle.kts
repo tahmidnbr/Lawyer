@@ -76,4 +76,10 @@ dependencies {
 
     //Data Store
     implementation("androidx.datastore:datastore-preferences:1.2.1")
+    //coil
+    // Core Coil Compose support
+    implementation("io.coil-kt.coil3:coil-compose:3.0.4")
+
+    // REQUIRED for network/URL image loading in Coil 3
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
 }
