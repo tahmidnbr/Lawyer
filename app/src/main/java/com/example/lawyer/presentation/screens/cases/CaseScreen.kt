@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,33 +57,36 @@ import java.util.Locale
 fun CaseScreen(
     contentPaddingValues: PaddingValues,
     navController: NavController,
-    vm: CaseListVm  = koinViewModel (),
+    vm: CaseListVm = koinViewModel(),
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
-    val cases =  uiState.cases
+    val cases = uiState.cases
 
     LazyColumn(
         contentPadding = contentPaddingValues,
         modifier = Modifier
+            .fillMaxSize()
             .background(PrimaryWhite),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
             SearchingOpt(navController = navController)
         }
 
-        items(items = cases, key = {it.case.id}){case ->
-            FilteredCases(caseHearing = case, navController = navController,)
+        items(items = cases, key = { it.case.id }) { case ->
+            FilteredCases(
+                caseHearing = case,
+                navController = navController
+            )
         }
     }
 
-    if (uiState.isLoading){
-        Column(
+    if (uiState.isLoading) {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(PrimaryWhite.copy(.8f)),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(PrimaryWhite.copy(alpha = 0.8f)),
+            contentAlignment = Alignment.Center
         ) {
             LoadingIcon()
         }
@@ -92,98 +96,106 @@ fun CaseScreen(
 @Composable
 fun SearchingOpt(
     navController: NavController
-){
-    var src  by remember { mutableStateOf("") }
-    var all by  remember { mutableStateOf(false) }
-    var last by  remember { mutableStateOf(false) }
+) {
+    var src by remember { mutableStateOf("") }
+    var all by remember { mutableStateOf(false) }
+    var last by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
-            .padding(12.dp)
             .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CustomTextField(
                 value = src,
                 onValueChange = { src = it },
-                modifier = Modifier
-                    .weight(1f),
-                placeholder = "Search",
+                modifier = Modifier.weight(1f),
+                placeholder = "Search cases..."
             )
+
             Button(
                 onClick = {
-                    navController.navigate("add"){
+                    navController.navigate("add") {
                         launchSingleTop = true
                     }
                 },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    PrimaryGreen
-                )
+                    containerColor = PrimaryGold,
+                    contentColor = PrimaryBlack
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
+                    contentDescription = "Add Case",
+                    tint = PrimaryBlack
                 )
             }
         }
 
         Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FilterChip(
-                onClick = { all = !all},
+                onClick = { all = !all },
                 label = {
-                    Text("All")
+                    Text(
+                        "All",
+                        fontWeight = FontWeight.Medium
+                    )
                 },
                 selected = all,
-                leadingIcon =
-                    if (all){
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.Done,
-                                contentDescription = null
-                            )
-                        }
-                    } else  {
-                        null
-                    },
+                leadingIcon = if (all) {
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Done,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                } else null,
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = PrimaryGreen,
-                    selectedLabelColor = PrimaryGold,
-                    selectedLeadingIconColor = PrimaryGold
+                    selectedContainerColor = PrimaryGold,
+                    selectedLabelColor = PrimaryBlack,
+                    selectedLeadingIconColor = PrimaryBlack,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                    labelColor = PrimaryBlack
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(10.dp)
             )
 
-
             FilterChip(
-                onClick = { last = !last},
+                onClick = { last = !last },
                 label = {
-                    Text("Priority")
+                    Text(
+                        "Priority",
+                        fontWeight = FontWeight.Medium
+                    )
                 },
                 selected = last,
-                leadingIcon =
-                    if (last){
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.Done,
-                                contentDescription = null
-                            )
-                        }
-                    } else  {
-                        null
-                    },
+                leadingIcon = if (last) {
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Done,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                } else null,
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = PrimaryGreen,
-                    selectedLabelColor = PrimaryGold,
-                    selectedLeadingIconColor = PrimaryGold
+                    selectedContainerColor = PrimaryGold,
+                    selectedLabelColor = PrimaryBlack,
+                    selectedLeadingIconColor = PrimaryBlack,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                    labelColor = PrimaryBlack
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(10.dp)
             )
         }
     }
@@ -200,27 +212,19 @@ fun FilteredCases(
 
     Row(
         modifier = Modifier
-            .padding(horizontal = 12.dp, vertical = 8.dp)
             .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
             .height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Box(
-            modifier = Modifier
-                .then(
-                    if (isOnCaseScreen){
-                        Modifier.weight(0.4f)
-                    } else {
-                        Modifier.weight(0.25f)
-                    }
-                )
-                 // This assigns 30% width to the cover column
+            modifier = Modifier.weight(if (isOnCaseScreen) 0.35f else 0.25f)
         ) {
             CaseFolderCover(
                 caseWithHearings = caseHearing,
-                modifier = Modifier.fillMaxWidth(), // Fills the 30% area and maintains 2:3 aspect ratio perfectly
+                modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    navController.navigate("details/${case.id}"){
+                    navController.navigate("details/${case.id}") {
                         launchSingleTop = isOnCaseScreen
                     }
                 },
@@ -230,58 +234,60 @@ fun FilteredCases(
 
         Column(
             modifier = Modifier
-                .padding(vertical = 8.dp)
+                .weight(if (isOnCaseScreen) 0.65f else 0.75f)
                 .fillMaxHeight()
-                .then(
-                    if (isOnCaseScreen){
-                        Modifier.weight(0.6f)
-                    } else {
-                        Modifier.weight(0.75f)
-                    }
-                )
-                ,
+                .padding(vertical = 4.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    "Case: ${case.caseNo}",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontSize = 15.sp,
+                    text = "Case: ${case.caseNo}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
                     color = PrimaryBlack
                 )
 
                 Text(
-                    "${case.plaintiff} vs ${case.defendant}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = PrimaryBlack.copy(.5f)
+                    text = "${case.plaintiff} vs ${case.defendant}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = PrimaryBlack.copy(alpha = 0.6f)
                 )
 
                 Text(
-                    caseHearing.hearings.lastOrNull()?.purposeOrProceeding ?: "Case Hearings",
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = if (isOnCaseScreen)4 else 2
+                    text = caseHearing.hearings.lastOrNull()?.purposeOrProceeding ?: "Case Hearings",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 13.sp,
+                    color = PrimaryBlack.copy(alpha = 0.8f),
+                    maxLines = if (isOnCaseScreen) 3 else 2
                 )
-
             }
 
-            if (isOnCaseScreen){
+            if (isOnCaseScreen) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.CalendarToday,
                         contentDescription = null,
-                        modifier = Modifier
-                            .size(12.dp),
-                        tint = PrimaryGreen
+                        modifier = Modifier.size(14.dp),
+                        tint = PrimaryGold
                     )
 
                     Text(
-                        "Next hearing: ${dateFormatter.format(Date(caseHearing.hearings.lastOrNull()?.hearingDate ?: 31536000000)) }",
-                        style = MaterialTheme.typography.labelSmall
+                        text = "Next hearing: ${
+                            dateFormatter.format(
+                                Date(caseHearing.hearings.lastOrNull()?.hearingDate ?: 31536000000)
+                            )
+                        }",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 12.sp,
+                        color = PrimaryBlack.copy(alpha = 0.7f)
                     )
                 }
             }

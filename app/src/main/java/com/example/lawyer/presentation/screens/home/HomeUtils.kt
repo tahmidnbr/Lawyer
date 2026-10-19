@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
@@ -18,12 +18,15 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.rounded.ArrowForwardIos
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -37,6 +40,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,7 +53,6 @@ import com.example.lawyer.logic.vm.HomeVm
 import com.example.lawyer.presentation.model.CaseWithHearings
 import com.example.lawyer.ui.theme.PrimaryBlack
 import com.example.lawyer.ui.theme.PrimaryGold
-import com.example.lawyer.ui.theme.PrimaryGreen
 import com.example.lawyer.ui.theme.PrimaryWhite
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
@@ -58,17 +61,17 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.absoluteValue
 
+
 @Composable
 fun Upcoming(
     navController: NavController,
     dateVm: DateVm = koinViewModel()
-){
+) {
     val dateState by dateVm.uiState.collectAsStateWithLifecycle()
     val hearings = dateState.allHearings
 
     val todayHearingCount = remember(hearings) {
         val today = Calendar.getInstance()
-
         val todayYear = today.get(Calendar.YEAR)
         val todayMonth = today.get(Calendar.MONTH)
         val todayDay = today.get(Calendar.DAY_OF_MONTH)
@@ -77,7 +80,6 @@ fun Upcoming(
             val hearingCalendar = Calendar.getInstance().apply {
                 timeInMillis = hearing.hearingDate
             }
-
             hearingCalendar.get(Calendar.YEAR) == todayYear &&
                     hearingCalendar.get(Calendar.MONTH) == todayMonth &&
                     hearingCalendar.get(Calendar.DAY_OF_MONTH) == todayDay
@@ -85,134 +87,160 @@ fun Upcoming(
     }
 
     val currentTime = remember { Date() }
-
     val monthFormatter = remember { SimpleDateFormat("LLLL", Locale.getDefault()) }
-    val dayFormatter = remember { SimpleDateFormat("dd", Locale.getDefault()) }
 
-    val currentMonth  = remember(currentTime) { monthFormatter.format(currentTime) }
-    val currentDay  = remember(currentTime) { dayFormatter.format(currentTime) }
+    val currentMonth = remember(currentTime) { monthFormatter.format(currentTime) }
+    val currentDay =
+        remember(currentTime) { SimpleDateFormat("dd", Locale.getDefault()).format(currentTime) }
 
-    Row(
+    Surface(
         modifier = Modifier
-            .padding(12.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f), // Matches SearchAdd card styling
+        tonalElevation = 0.dp
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Row(
             modifier = Modifier
-                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .padding( 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f)
             ) {
+                Row(
+                    modifier = Modifier.padding(bottom = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        8.dp,
+                        Alignment.CenterHorizontally
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = currentMonth.uppercase(),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = PrimaryBlack
+                    )
+                    Text(
+                        text = currentDay,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = PrimaryGold
+                    )
+                }
+
                 Text(
-                    currentMonth.uppercase(),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryBlack
-                )
-                Text(
-                    currentDay,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryGold
+                    text = when {
+                        dateState.isLoading -> "CHECKING TODAY'S HEARINGS..."
+                        todayHearingCount > 0 -> "$todayHearingCount ${if (todayHearingCount == 1) "HEARING" else "HEARINGS"} TODAY"
+                        else -> "ITS A FREE DAY YOUR HONOUR"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = PrimaryBlack.copy(alpha = 0.6f)
                 )
             }
 
-            Text(
-                text = when{
-                    dateState.isLoading -> "CHECKING TODAY'S HEARINGS..."
-                    todayHearingCount > 0 ->
-                        "$todayHearingCount ${
-                            if (todayHearingCount == 1) "HEARING" else "HEARINGS"
-                        } TODAY"
-                    else -> "Its a free day your Honour".uppercase()
-
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = PrimaryGreen.copy(alpha = .65f)
-            )
-        }
-
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.ArrowForwardIos,
-                modifier = Modifier
-                    .clickable(onClick = {
-                        navController.navigate("dates"){
-                            popUpTo(navController.graph.findStartDestination().id){
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
+            IconButton(
+                onClick = {
+                    navController.navigate("dates") {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
                         }
-                    }),
-                contentDescription = null,
-                tint = PrimaryBlack
-            )
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    contentDescription = "View Calendar",
+                    tint = PrimaryBlack,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
     }
 }
 
 @Composable
 fun SearchAdd(navController: NavController) {
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    Surface(
         modifier = Modifier
-            .padding(horizontal = 12.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f), // Subtle static card background
+        tonalElevation = 0.dp
     ) {
-        Text(
-            "Priority Cases",
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
-                .weight(1f),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 18.sp,
-            letterSpacing = 1.sp
-        )
-
-        TextButton(
-            onClick = {
-                navController.navigate("add")
-            },
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Text(
-                "Add",
-                color = PrimaryGold,
-                style = MaterialTheme.typography.labelLarge
+                text = "Priority Cases",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                color = PrimaryBlack,
+                letterSpacing = 0.5.sp
             )
+
+            Button(
+                onClick = {
+                    navController.navigate("add") {
+                        launchSingleTop = true
+                    }
+                },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryGold,
+                    contentColor = PrimaryBlack
+                ),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Add Case",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
         }
     }
 }
 
 @Composable
 fun CustomTextField(
-    value : String,
+    value: String,
     onValueChange: (String) -> Unit,
-    modifier : Modifier = Modifier,
+    modifier: Modifier = Modifier,
     placeholder: String
-){
+) {
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        textStyle = MaterialTheme.typography.labelLarge,
+        textStyle = TextStyle(
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Normal,
+            color = PrimaryBlack
+        ),
         singleLine = true,
         modifier = modifier,
-
-        decorationBox = { innerFiled ->
+        decorationBox = { innerTextField ->
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.5.dp, PrimaryBlack.copy(.05f), RoundedCornerShape(12.dp))
-            ){
+                    .border(1.5.dp, PrimaryBlack.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -220,46 +248,44 @@ fun CustomTextField(
                         .fillMaxWidth()
                 ) {
                     Box(
-                        modifier = Modifier
-                            .weight(1f),
+                        modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.CenterStart
-                    ){
-                        if (value.isEmpty()){
+                    ) {
+                        if (value.isEmpty()) {
                             Text(
-                                placeholder,
+                                text = placeholder,
                                 style = MaterialTheme.typography.labelLarge,
-                                color = PrimaryBlack.copy(.5f)
+                                color = PrimaryBlack.copy(alpha = 0.4f)
                             )
                         }
-
-                        innerFiled()
+                        innerTextField()
                     }
 
                     if (value.isNotEmpty()) {
                         Icon(
-                            imageVector = Icons.Default.Clear, // Changed to Clear since it only shows when text is present
+                            imageVector = Icons.Default.Clear,
                             contentDescription = "Clear text",
-                            tint = PrimaryBlack.copy(.5f),
+                            tint = PrimaryBlack.copy(alpha = 0.5f),
                             modifier = Modifier
-                                .clickable(onClick = { onValueChange("")})
-                                .size(15.dp)
+                                .clickable(onClick = { onValueChange("") })
+                                .size(16.dp)
                         )
-
                     }
                 }
             }
         }
     )
 }
+
 @Composable
 fun CaseFolderCover(
     modifier: Modifier = Modifier,
     color: Color = PrimaryGold,
     isFeature: Boolean = true,
     onClick: () -> Unit,
-    caseWithHearings: CaseWithHearings ? = null
+    caseWithHearings: CaseWithHearings? = null
 ) {
-    val tabFraction = 0.06f   // tab width as a fraction of total width
+    val tabFraction = 0.06f
     val customPath = remember { Path() }
 
     Box(
@@ -273,25 +299,23 @@ fun CaseFolderCover(
                 val bodyRight = w - tabW
                 val tabBottom = h * 0.28f
 
-                // 2. Clear previous coordinates and rewrite them on the SAME object
                 customPath.reset()
                 customPath.apply {
                     moveTo(0f, r)
-                    quadraticBezierTo(0f, 0f, r, 0f)
+                    quadraticTo(0f, 0f, r, 0f)
                     lineTo(w - r, 0f)
-                    quadraticBezierTo(w, 0f, w, r)
+                    quadraticTo(w, 0f, w, r)
                     lineTo(w, tabBottom - r)
-                    quadraticBezierTo(w, tabBottom, w - r, tabBottom)
+                    quadraticTo(w, tabBottom, w - r, tabBottom)
                     lineTo(bodyRight + r, tabBottom)
-                    quadraticBezierTo(bodyRight, tabBottom, bodyRight, tabBottom + r)
+                    quadraticTo(bodyRight, tabBottom, bodyRight, tabBottom + r)
                     lineTo(bodyRight, h - r)
-                    quadraticBezierTo(bodyRight, h, bodyRight - r, h)
+                    quadraticTo(bodyRight, h, bodyRight - r, h)
                     lineTo(r, h)
-                    quadraticBezierTo(0f, h, 0f, h - r)
+                    quadraticTo(0f, h, 0f, h - r)
                     close()
                 }
 
-                // 3. Draw shadow
                 drawIntoCanvas { canvas ->
                     val shadowPaint = Paint()
                     val frameworkPaint = shadowPaint.asFrameworkPaint()
@@ -300,109 +324,78 @@ fun CaseFolderCover(
                         8.dp.toPx(),
                         0f,
                         4.dp.toPx(),
-                        Color.Black.copy(alpha = 0.2f).toArgb()
+                        Color.Black.copy(alpha = 0.15f).toArgb()
                     )
                     canvas.drawPath(customPath, shadowPaint)
                 }
 
-                // 4. Draw color
                 drawPath(customPath, color)
             }
             .clickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier
-                .padding(8.dp)
+                .padding(12.dp)
                 .align(Alignment.TopStart)
         ) {
-            Column(
-                //verticalArrangement = Arrangement.Center,
-                //horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (!isFeature){
-                    if (caseWithHearings == null){
-                        Text(
-                            "00",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontSize = 24.sp,
-                            color = PrimaryWhite
-                        )
-                    } else{
-                        Text(
-                            formatMonth(caseWithHearings?.case?.creatingDate),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = PrimaryWhite
-                        )
-                        Text(
-                            formatDay(caseWithHearings?.case?.creatingDate),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontSize = 24.sp,
-                            color = PrimaryWhite
-                        )
-                    }
+            Column {
+                if (caseWithHearings == null) {
+                    Text(
+                        text = "00",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontSize = if (isFeature) 44.sp else 24.sp,
+                        color = PrimaryWhite
+                    )
                 } else {
-                    if (caseWithHearings == null){
-                        Text(
-                            "00",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontSize = 44.sp,
-                            color = PrimaryWhite
-                        )
-                    } else{
-                        Text(
-                            formatMonth(caseWithHearings.case.creatingDate),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = PrimaryWhite
-                        )
-                        Text(
-                            formatDay(caseWithHearings.case.creatingDate),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontSize = 44.sp,
-                            color = PrimaryWhite
-                        )
-                    }
+                    Text(
+                        text = formatMonth(caseWithHearings.case.creatingDate),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = PrimaryWhite.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = formatDay(caseWithHearings.case.creatingDate),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontSize = if (isFeature) 44.sp else 24.sp,
+                        color = PrimaryWhite
+                    )
                 }
             }
         }
 
-        if (isFeature){
+        if (isFeature) {
             Box(
                 modifier = Modifier
-                    .padding(8.dp)
-                    .align(alignment = Alignment.BottomStart)
+                    .padding(12.dp)
+                    .align(Alignment.BottomStart)
             ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    //horizontalAlignment = Alignment.CenterHorizontally
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    if (caseWithHearings == null){
+                    if (caseWithHearings == null) {
                         Text(
-                            "Add Case",
+                            text = "Add Case",
                             style = MaterialTheme.typography.headlineMedium,
                             fontSize = 15.sp,
                             color = PrimaryWhite,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.5.sp
                         )
-
                         Text(
-                            "Click this folder to add a new case",
+                            text = "Tap to create a new case",
                             style = MaterialTheme.typography.labelSmall,
-                            color = PrimaryWhite
+                            color = PrimaryWhite.copy(alpha = 0.8f)
                         )
                     } else {
                         Text(
-                            "Case: ${caseWithHearings?.case?.caseNo ?: ""}",
+                            text = "Case: ${caseWithHearings.case.caseNo}",
                             style = MaterialTheme.typography.headlineMedium,
                             fontSize = 15.sp,
                             color = PrimaryWhite,
-                            letterSpacing = 1.sp
-
+                            letterSpacing = 0.5.sp
                         )
-
                         Text(
-                            "${caseWithHearings?.case?.plaintiff} vs ${caseWithHearings?.case?.defendant}",
+                            text = "${caseWithHearings.case.plaintiff} vs ${caseWithHearings.case.defendant}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = PrimaryWhite
+                            color = PrimaryWhite.copy(alpha = 0.8f)
                         )
                     }
                 }
@@ -410,14 +403,14 @@ fun CaseFolderCover(
         }
     }
 }
+
 @Composable
 fun UpcomingCases(
     navController: NavController,
     vm: HomeVm = koinViewModel()
-){
+) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val cases = uiState.priorityCases
-
     val initialPage = if (cases.isEmpty()) 0 else 1
 
     key(cases.size) {
@@ -432,24 +425,21 @@ fun UpcomingCases(
         ) {
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(260.dp),
                 contentPadding = PaddingValues(horizontal = 72.dp),
-                pageSpacing = 6.dp
+                pageSpacing = 12.dp
             ) { page ->
-
                 val pageOffset =
-                    ((pagerState.currentPage - page) +
-                            pagerState.currentPageOffsetFraction)
-                        .absoluteValue
-
+                    ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
                 val scaleFactor = lerp(
                     start = 0.88f,
                     stop = 1.0f,
-                    fraction = (1f - pageOffset.coerceIn(0f, 1f))
+                    fraction = (1f - pageOffset).coerceIn(0f, 1f)
                 )
 
                 if (page == 0) {
-
                     CaseFolderCover(
                         modifier = Modifier.graphicsLayer {
                             scaleX = scaleFactor
@@ -457,14 +447,13 @@ fun UpcomingCases(
                         },
                         color = Color.Gray,
                         onClick = {
-                            navController.navigate("add")
+                            navController.navigate("add") {
+                                launchSingleTop = true
+                            }
                         }
                     )
-
                 } else {
-
                     val caseHearing = cases[page - 1]
-
                     CaseFolderCover(
                         caseWithHearings = caseHearing,
                         modifier = Modifier.graphicsLayer {
@@ -472,7 +461,9 @@ fun UpcomingCases(
                             scaleY = scaleFactor
                         },
                         onClick = {
-                            navController.navigate("details/${caseHearing.case.id}")
+                            navController.navigate("details/${caseHearing.case.id}") {
+                                launchSingleTop = true
+                            }
                         },
                         isFeature = true
                     )
@@ -484,18 +475,10 @@ fun UpcomingCases(
 
 fun formatMonth(timestamp: Long?): String {
     if (timestamp == null) return ""
-
-    return SimpleDateFormat(
-        "MMM",
-        Locale.getDefault()
-    ).format(Date(timestamp)).uppercase()
+    return SimpleDateFormat("MMM", Locale.getDefault()).format(Date(timestamp)).uppercase()
 }
 
 fun formatDay(timestamp: Long?): String {
     if (timestamp == null) return ""
-
-    return SimpleDateFormat(
-        "dd",
-        Locale.getDefault()
-    ).format(Date(timestamp))
+    return SimpleDateFormat("dd", Locale.getDefault()).format(Date(timestamp))
 }

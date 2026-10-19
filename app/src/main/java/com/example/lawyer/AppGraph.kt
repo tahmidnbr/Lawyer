@@ -34,13 +34,14 @@ import com.example.lawyer.presentation.screens.sub.AddCases
 import com.example.lawyer.presentation.screens.sub.CaseDetails
 import com.example.lawyer.presentation.screens.sub.CaseTop
 import com.example.lawyer.presentation.screens.menu.MenuScreen
-import com.example.lawyer.presentation.screens.home.HomeScreen
+
 import com.example.lawyer.presentation.screens.OnBoardScreen
 import com.example.lawyer.presentation.screens.SplashScreen
 import com.example.lawyer.presentation.screens.WelcomeScreen
 import com.example.lawyer.presentation.screens.sub.WriteCase
 import com.example.lawyer.presentation.screens.cases.CaseScreen
 import com.example.lawyer.presentation.screens.dates.DateScreen
+import com.example.lawyer.presentation.screens.home.HomeScreen
 import com.example.lawyer.ui.theme.PrimaryWhite
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
