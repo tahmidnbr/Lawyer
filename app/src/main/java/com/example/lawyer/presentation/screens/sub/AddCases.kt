@@ -88,9 +88,8 @@ fun AddCases(
 
     Column(
         modifier = modifier
-            .navigationBarsPadding()
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp),
     ) {
         // ── FIXED TOP HEADER (Title & Priority Switch) ──────────────────
         Column(
@@ -99,7 +98,8 @@ fun AddCases(
         ) {
             Text(
                 "Case Details",
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth(),
                 color = Color.Black,
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
@@ -156,7 +156,7 @@ fun AddCases(
 
             Text(
                 "vs",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.headlineSmall,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.fillMaxWidth(),
@@ -299,7 +299,11 @@ fun ImagePickerField(
             .fillMaxWidth()
             .height(90.dp)
             .clip(RoundedCornerShape(10.dp))
-            .border(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+            .border(
+                1.5.dp,
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                RoundedCornerShape(10.dp)
+            )
             .clickable { showDialog = true },
         contentAlignment = Alignment.Center
     ) {
