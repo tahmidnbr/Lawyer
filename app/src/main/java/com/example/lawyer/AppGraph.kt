@@ -42,8 +42,6 @@ import com.example.lawyer.presentation.screens.sub.WriteCase
 import com.example.lawyer.presentation.screens.cases.CaseScreen
 import com.example.lawyer.presentation.screens.dates.DateScreen
 import com.example.lawyer.ui.theme.PrimaryWhite
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import org.koin.compose.koinInject
 
 @Composable
@@ -186,8 +184,6 @@ fun MainScaffoldWrapper(
     innerNavController: NavController,
     content: @Composable (Dp) -> Unit
 ) {
-    val hazeState = remember { HazeState() }
-
     // Scoped only to this wrapper — doesn't affect ScreenGraph
     val navBackStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -210,7 +206,6 @@ fun MainScaffoldWrapper(
         topBar = { Topbar() },
         bottomBar = {
             Bottombar(
-                hazeState = hazeState,
                 selectedIndex = screens.indexOfFirst { it.route == activeRoute }.coerceAtLeast(0),
                 onSelect = { i ->
                     val route = screens[i].route
@@ -228,7 +223,6 @@ fun MainScaffoldWrapper(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .hazeSource(hazeState)
                 .padding(top = innerPadding.calculateTopPadding())
         ) {
             content(innerPadding.calculateBottomPadding())

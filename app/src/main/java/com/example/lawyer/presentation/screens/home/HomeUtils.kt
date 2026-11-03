@@ -200,10 +200,13 @@ fun CustomTextField(
     modifier : Modifier = Modifier,
     placeholder: String
 ){
+    val customText = MaterialTheme.typography.titleMedium.copy(
+        fontWeight = FontWeight.Normal
+    )
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        textStyle = MaterialTheme.typography.labelLarge,
+        textStyle = customText,
         singleLine = true,
         modifier = modifier,
 
@@ -227,7 +230,7 @@ fun CustomTextField(
                         if (value.isEmpty()){
                             Text(
                                 placeholder,
-                                style = MaterialTheme.typography.labelLarge,
+                                style = customText,
                                 color = PrimaryBlack.copy(.5f)
                             )
                         }

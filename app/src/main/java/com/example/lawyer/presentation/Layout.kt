@@ -79,10 +79,6 @@ import com.example.lawyer.ui.theme.PrimaryBlack
 import com.example.lawyer.ui.theme.PrimaryGold
 import com.example.lawyer.ui.theme.PrimaryGreen
 import com.example.lawyer.ui.theme.PrimaryWhite
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
 import java.util.UUID
 
 val screens = listOf(
@@ -182,62 +178,41 @@ fun CommonTopBar(
 fun Bottombar(
     selectedIndex: Any,
     onSelect: (Int) -> Unit = {},
-    hazeState: HazeState
 ) {
-    val blurModifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        Modifier.hazeEffect(
-            state = hazeState,
-            style = HazeStyle(
-                tint = HazeTint(PrimaryBlack.copy(alpha = 0.75f)),
-                blurRadius = 8.dp,
-                noiseFactor = 0.01f
-            )
-        )
-    } else {
-        Modifier.background(PrimaryBlack)
-    }
-
-    Box(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding() // Move insets here to push the floating bar above the navigation handle
-            .padding(start = 12.dp, end = 12.dp, bottom = 6.dp) // Adds the floating margins
+            .background(PrimaryGreen)
+            .navigationBarsPadding()
+            .clip(RoundedCornerShape(12.dp)) // Clips the blur and background to a pill shape
+            .padding(8.dp), // Padding inside the floating bar
+        horizontalArrangement = Arrangement.SpaceAround,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .zIndex(1f)
-                .clip(RoundedCornerShape(12.dp)) // Clips the blur and background to a pill shape
-                .then(blurModifier)
-                .padding(8.dp), // Padding inside the floating bar
-            horizontalArrangement = Arrangement.SpaceAround,
-        ) {
-            screens.forEachIndexed { index, screen -> // Fixed shadow variable naming conflict
-                val isSelected = selectedIndex == index
-                Column(
-                    modifier = Modifier
-                        .padding(top = 4.dp, bottom = 4.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            onClick = { onSelect(index) },
-                            indication = null
-                        ),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isSelected) screen.selected else screen.unSelected,
-                        contentDescription = null,
-                        tint = if (isSelected) PrimaryGold else PrimaryWhite.copy(alpha = .5f),
-                        modifier = Modifier.size(26.dp)
-                    )
-                    Text(
-                        text = screen.text,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) PrimaryGold else PrimaryWhite.copy(.5f)
-                    )
-                }
+        screens.forEachIndexed { index, screen -> // Fixed shadow variable naming conflict
+            val isSelected = selectedIndex == index
+            Column(
+                modifier = Modifier
+                    .padding(top = 4.dp, bottom = 4.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = { onSelect(index) },
+                        indication = null
+                    ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = if (isSelected) screen.selected else screen.unSelected,
+                    contentDescription = null,
+                    tint = if (isSelected) PrimaryGold else PrimaryWhite.copy(alpha = .5f),
+                    modifier = Modifier.size(26.dp)
+                )
+                Text(
+                    text = screen.text,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) PrimaryGold else PrimaryWhite.copy(.5f)
+                )
             }
         }
     }

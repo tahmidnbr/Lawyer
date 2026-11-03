@@ -59,10 +59,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
 
-    //Haze
-    implementation("dev.chrisbanes.haze:haze:1.7.3")
-    implementation("dev.chrisbanes.haze:haze-materials:1.7.3")
-
     // Koin Core & Android features
     implementation("io.insert-koin:koin-core:4.2.2")
     implementation("io.insert-koin:koin-android:4.2.2")

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -335,23 +336,26 @@ fun HearingCard(
     val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
     Row(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         // ── Timeline column: dot + line ───────────────────────
         Column(
             modifier = Modifier
                 .weight(.1f)
-                .padding(top = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxHeight()
+                //.padding(top = 4.dp)
+            ,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 modifier = Modifier
                     .size(12.dp)
                     .then(
                         if (isLatest)
-                            Modifier.background(PrimaryGreen, CircleShape)
+                            Modifier.background(PrimaryGold, CircleShape)
                         else
-                            Modifier.border(2.dp, PrimaryGreen, CircleShape)
+                            Modifier.border(1.dp, PrimaryGold, CircleShape)
                     )
             )
             // Connector line — hidden on last item
@@ -359,7 +363,7 @@ fun HearingCard(
                 Box(
                     modifier = Modifier
                         .width(2.dp)
-                        .height(72.dp)           // matches card height roughly
+                        .height(75.dp)           // matches card height roughly
                         .background(PrimaryGreen.copy(alpha = 0.25f))
                 )
             }
