@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -41,6 +40,7 @@ import com.example.lawyer.presentation.screens.WelcomeScreen
 import com.example.lawyer.presentation.screens.sub.WriteCase
 import com.example.lawyer.presentation.screens.cases.CaseScreen
 import com.example.lawyer.presentation.screens.dates.DateScreen
+import com.example.lawyer.presentation.screens.sub.Attachments
 import com.example.lawyer.ui.theme.PrimaryWhite
 import org.koin.compose.koinInject
 
@@ -174,6 +174,17 @@ fun ScreenGraph(modifier: Modifier) {
                 }
             ) { subScreen ->
                 WriteCase(modifier = Modifier.padding(subScreen))
+            }
+        }
+
+        composable("attachments") { backStackEntry ->
+            Scaffold(
+                containerColor = PrimaryWhite,
+                topBar = {CommonTopBar(innerNavController)}
+            ) { subScreen ->
+                Attachments(
+                    modifier = Modifier.padding(subScreen)
+                )
             }
         }
     }

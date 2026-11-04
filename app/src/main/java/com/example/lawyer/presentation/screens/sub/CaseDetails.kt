@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,9 +28,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -100,7 +104,6 @@ fun CaseDetails(
             .fillMaxSize()
             .padding(horizontal = 16.dp),
         contentPadding = PaddingValues(bottom = 32.dp),
-        //verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             CaseHeadings(
@@ -180,8 +183,41 @@ fun CaseDetails(
                 hearing = hearing,
                 isLatest   = index == 0,
                 isLast     = index == hearings.lastIndex,
-                onDelete   = { hearingVm.deleteHearing(hearing.id) }
+                onDelete   = { hearingVm.deleteHearing(hearing.id) },
             )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(48.dp))
+
+            Button(
+                //enabled = uiState.isFormValid && !uiState.isLoading,
+                onClick = {
+                    navController.navigate("attachments")
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryGreen
+                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        Icons.Outlined.Attachment,
+                        contentDescription = "Attached Images",
+                        modifier = Modifier
+                            .size(20.dp),
+                    )
+                    Text(
+                        "Attachments",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
     }
 }
@@ -249,6 +285,8 @@ fun CaseHeadings(
             }
         }
 
+        Spacer(modifier = Modifier.height(12.dp))
+
         // Title
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -295,7 +333,7 @@ fun CaseHeadings(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Delete,
+                        imageVector = Icons.Filled.Delete,
                         contentDescription = "Completed",
                         modifier = Modifier
                             .clickable(
@@ -331,20 +369,21 @@ fun HearingCard(
     isLatest: Boolean,
     isLast: Boolean,
     onDelete: () -> Unit,
-    hearing: Hearing
+    hearing: Hearing,
 ) {
     val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+        ,
     ) {
         // ── Timeline column: dot + line ───────────────────────
         Column(
             modifier = Modifier
                 .weight(.1f)
                 .fillMaxHeight()
-                //.padding(top = 4.dp)
             ,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -362,8 +401,8 @@ fun HearingCard(
             if (!isLast) {
                 Box(
                     modifier = Modifier
-                        .width(2.dp)
-                        .height(75.dp)           // matches card height roughly
+                        .width(1.dp)
+                        .fillMaxHeight()
                         .background(PrimaryGreen.copy(alpha = 0.25f))
                 )
             }
@@ -374,7 +413,9 @@ fun HearingCard(
         // ── Proceeding card ───────────────────────────────────
         Card(
             modifier = Modifier
-                .clickable{}
+                .clickable{
+
+                }
                 .weight(.9f)
                 .padding(bottom = if (isLast) 0.dp else 12.dp),
             colors = CardDefaults.cardColors(
@@ -393,7 +434,8 @@ fun HearingCard(
                 ) {
                     Text(
                         dateFormatter.format(Date(hearing.hearingDate)).uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isLatest) PrimaryWhite.copy(.75f) else PrimaryBlack.copy(.5f)
                     )
@@ -409,8 +451,8 @@ fun HearingCard(
                 }
                 Text(
                     hearing.purposeOrProceeding,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Normal,
                     color = if (isLatest) PrimaryWhite else PrimaryBlack
                 )
             }
