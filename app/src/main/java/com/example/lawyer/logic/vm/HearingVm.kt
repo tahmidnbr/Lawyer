@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -24,9 +27,10 @@ data class HearingFormState(
     val editingId: Long? = null,
     val purposeOrProceeding: String = "",
     val notes: String = "",
-    val hearingDate: Long = System.currentTimeMillis(),
+    val hearingDate: Long? = null,
     val isVisible: Boolean = false
 ) {
+    val hasDateSelected: Boolean get() = hearingDate != null
     val isValid: Boolean get() = purposeOrProceeding.isNotBlank()
 }
 
@@ -47,6 +51,10 @@ class HearingVm(
     private val caseId: Long = savedStateHandle.get<String>("caseId")
         ?.toLongOrNull() ?: error("caseId required")
 
+    // ← read optional hearingId from route
+    private val editHearingId: Long? =
+        savedStateHandle.get<String>("hearingId")?.toLongOrNull()
+
     val uiState: StateFlow<HearingUiState> =
         repo.getCaseWithHearings(caseId)
             .map { HearingUiState(caseWithHearings = it, isLoading = false) }
@@ -62,6 +70,28 @@ class HearingVm(
 
     private val _events = Channel<UiEvent>(Channel.BUFFERED)
     val events: Flow<UiEvent> = _events.receiveAsFlow()
+
+    init {
+        // If editing, wait for hearings to load then pre-fill form
+        if (editHearingId != null) {
+            viewModelScope.launch {
+                uiState
+                    .filter { !it.isLoading }
+                    .map { it.hearings.find { h -> h.id == editHearingId } }
+                    .filterNotNull()
+                    .first()
+                    .let { hearing ->
+                        _formState.value = HearingFormState(
+                            editingId           = hearing.id,
+                            purposeOrProceeding = hearing.purposeOrProceeding,
+                            notes               = hearing.notes,
+                            hearingDate         = hearing.hearingDate,
+                            isVisible           = true
+                        )
+                    }
+            }
+        }
+    }
 
     // ── Form controls ─────────────────────────────────────────
     fun onProceedingChange(v: String) = _formState.update { it.copy(purposeOrProceeding = v) }
@@ -90,7 +120,7 @@ class HearingVm(
                 val hearing = Hearing(
                     id                  = form.editingId ?: 0L,
                     caseId              = caseId,
-                    hearingDate         = form.hearingDate,
+                    hearingDate         = form.hearingDate!!,
                     purposeOrProceeding = form.purposeOrProceeding.trim(),
                     notes               = form.notes.trim()
                 )
@@ -98,6 +128,7 @@ class HearingVm(
                 else repo.insertHearing(hearing)
             }.onSuccess {
                 _formState.value = HearingFormState(isVisible = true) // clear, stay open
+                _events.send(UiEvent.NavigateBack)
             }.onFailure {
                 _events.send(UiEvent.ShowToast("Failed to save hearing"))
             }

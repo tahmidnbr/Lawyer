@@ -3,6 +3,7 @@ package com.example.lawyer.di
 
 import androidx.room3.Room
 import com.example.lawyer.AppPreferences
+import com.example.lawyer.logic.ImageStorage
 import com.example.lawyer.logic.repo.CaseRepository
 import com.example.lawyer.logic.room.CaseDatabase
 import com.example.lawyer.logic.room.HearingDao
@@ -33,10 +34,12 @@ val appModule = module {
 
     single { AppPreferences(androidContext()) }
 
+    single { ImageStorage(androidContext()) }
+
     viewModel { HomeVm(get()) }
     viewModel { CaseListVm(get()) }
-    viewModel { CaseFormVm(get(), get()) }
-    viewModel { CaseDetailVm(get(), get()) }
+    viewModel { CaseFormVm(get(), get(), get()) }
+    viewModel { CaseDetailVm(get(), get(), get()) }
     viewModel { HearingVm(get(), get()) }
     viewModel { DateVm(get()) }
 }

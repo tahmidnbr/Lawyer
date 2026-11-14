@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lawyer.logic.ImageStorage
 import com.example.lawyer.logic.repo.CaseRepository
 import com.example.lawyer.presentation.UiEvent
 import com.example.lawyer.presentation.model.LegalCase
@@ -28,7 +29,10 @@ data class CaseFormUiState(
     val isPriority: Boolean = false,
     val selectedImageUri: String? = null, // Stored as String? for Room compatibility
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+
+    val selectedImageUris: List<Uri> = emptyList(),
+    val savedImagePaths: List<String> = emptyList(),
 ) {
     val isEditMode: Boolean get() = caseId != null
     val title: String get() = "$plaintiff vs $defendant"
@@ -41,6 +45,7 @@ data class CaseFormUiState(
 
 class CaseFormVm(
     private val repo: CaseRepository,
+    private val imageStorage: ImageStorage,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -63,17 +68,17 @@ class CaseFormVm(
                     if (case != null) {
                         _uiState.update {
                             it.copy(
-                                caseId        = case.id,
-                                caseNo        = case.caseNo,
-                                plaintiff     = case.plaintiff,
-                                defendant     = case.defendant,
-                                representing  = case.representing,
-                                courtName     = case.courtName,
-                                caseFee       = case.caseFee?.toString() ?: "",
-                                caseType      = case.caseType,
-                                isPriority    = case.isPriority,
-                                selectedImageUri = case.imageUri, // Load saved image URI if present
-                                isLoading     = false
+                                caseId      = case.id,
+                                caseNo      = case.caseNo,
+                                plaintiff   = case.plaintiff,
+                                defendant   = case.defendant,
+                                representing = case.representing,
+                                courtName   = case.courtName,
+                                caseFee     = case.caseFee?.toString() ?: "",
+                                caseType    = case.caseType,
+                                isPriority  = case.isPriority,
+                                savedImagePaths = case.imagePaths,
+                                isLoading   = false
                             )
                         }
                     } else {
@@ -96,8 +101,19 @@ class CaseFormVm(
     fun onCaseTypeChange(v: String)     = _uiState.update { it.copy(caseType = v) }
     fun onPriorityToggle()              = _uiState.update { it.copy(isPriority = !it.isPriority) }
 
-    // Image selection updater
-    fun onImageSelected(uri: Uri?)      = _uiState.update { it.copy(selectedImageUri = uri?.toString()) }
+    //Images
+    fun onImageSelected(uris: List<Uri>) =
+        _uiState.update { it.copy(selectedImageUris = uris) }
+
+    fun removeNewImage(uri: Uri) =
+    _uiState.update { it.copy(selectedImageUris = it.selectedImageUris - uri) }
+
+    fun removeSavedImage(path: String) {
+        viewModelScope.launch {
+            imageStorage.deleteImage(path)
+            _uiState.update { it.copy(savedImagePaths = it.savedImagePaths - path) }
+        }
+    }
 
     // ── Save ──────────────────────────────────────────────────
     fun saveCase() {
@@ -109,6 +125,9 @@ class CaseFormVm(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             runCatching {
+                val newPath = imageStorage.saveImages((state.selectedImageUris))
+                val allPaths = state.savedImagePaths + newPath
+
                 val case = LegalCase(
                     id = state.caseId ?: 0L,
                     caseNo = state.caseNo.trim(),
@@ -119,7 +138,7 @@ class CaseFormVm(
                     caseFee = state.caseFee.toDoubleOrNull(),
                     caseType = state.caseType.trim(),
                     isPriority = state.isPriority,
-                    imageUri = state.selectedImageUri // Save the image URI/path to entity
+                    imagePaths = allPaths
                 )
                 if (state.isEditMode) { repo.updateCase(case); null }
                 else repo.insertCase(case)

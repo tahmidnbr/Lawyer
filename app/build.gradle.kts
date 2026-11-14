@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.21"
 }
 
 android {
@@ -46,6 +47,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.room.common)
     implementation(libs.digital.ink.recognition)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -58,10 +60,6 @@ dependencies {
     //Icons
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
-
-    //Haze
-    implementation("dev.chrisbanes.haze:haze:1.7.3")
-    implementation("dev.chrisbanes.haze:haze-materials:1.7.3")
 
     // Koin Core & Android features
     implementation("io.insert-koin:koin-core:4.2.2")
@@ -76,7 +74,7 @@ dependencies {
 
     //Data Store
     implementation("androidx.datastore:datastore-preferences:1.2.1")
-    //coil
+    
     // Core Coil Compose support
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
 

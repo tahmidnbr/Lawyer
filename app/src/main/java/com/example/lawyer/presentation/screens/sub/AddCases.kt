@@ -4,7 +4,9 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,21 +19,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,7 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -52,14 +58,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.lawyer.logic.vm.CaseFormVm
 import com.example.lawyer.presentation.UiEvent
-import com.example.lawyer.presentation.screens.home.CustomTextField
+import com.example.lawyer.presentation.extra.CourtDropdown
+import com.example.lawyer.presentation.extra.CustomTextField
 import com.example.lawyer.ui.theme.PrimaryBlack
 import com.example.lawyer.ui.theme.PrimaryGold
+import com.example.lawyer.ui.theme.PrimaryGreen
 import com.example.lawyer.ui.theme.PrimaryWhite
 import org.koin.androidx.compose.koinViewModel
-import coil3.compose.AsyncImage
+import java.io.File
 
 @Composable
 fun AddCases(
@@ -148,7 +157,7 @@ fun AddCases(
         ) {
             Spacer(Modifier.height(4.dp))
 
-            CustomOutlinedTextField(
+            CustomTextField(
                 value = uiState.plaintiff,
                 onValueChange = vm::onPlaintiffChange,
                 label = "Plaintiff"
@@ -164,25 +173,23 @@ fun AddCases(
                 color = Color.Black
             )
 
-            CustomOutlinedTextField(
+            CustomTextField(
                 value = uiState.defendant,
                 onValueChange = vm::onDefendantChange,
                 label = "Defendant"
             )
 
-            CustomOutlinedTextField(
+            CustomTextField(
                 value = uiState.representing,
                 onValueChange = vm::onRepresentingChange,
                 label = "Representing"
             )
-
-            CustomOutlinedTextField(
-                value = uiState.courtName,
-                onValueChange = vm::onCourtNameChange,
-                label = "Court"
+            CourtDropdown(
+                selectedCourt = uiState.courtName,
+                onCourtSelected = vm::onCourtNameChange
             )
 
-            CustomOutlinedTextField(
+            CustomTextField(
                 value = uiState.caseType,
                 onValueChange = vm::onCaseTypeChange,
                 label = "Case Type"
@@ -192,13 +199,13 @@ fun AddCases(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                CustomOutlinedTextField(
+                CustomTextField(
                     value = uiState.caseFee,
                     onValueChange = vm::onCaseFeeChange,
                     modifier = Modifier.weight(1f),
                     label = "Case Fee"
                 )
-                CustomOutlinedTextField(
+                CustomTextField(
                     value = uiState.caseNo,
                     onValueChange = vm::onCaseNoChange,
                     modifier = Modifier.weight(1f),
@@ -206,12 +213,57 @@ fun AddCases(
                 )
             }
 
-            ImagePickerField(
-                selectedImageUri = uiState.selectedImageUri,
-                onImageSelected = vm::onImageSelected
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "Make as priority",
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                    ,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Normal
+                )
 
-            Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier.height(24.dp), // Forces the vertical height container to remain tight
+                    contentAlignment = Alignment.Center
+                ) {
+                    Switch(
+                        checked = uiState.isPriority,
+                        onCheckedChange = { vm.onPriorityToggle() },
+                        modifier = Modifier
+                            .scale(0.75f)
+                            // Removes the invisible 48dp padding surrounding standard M3 interactive elements
+                            .minimumInteractiveComponentSize(),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = PrimaryWhite,
+                            checkedTrackColor = PrimaryGold,
+                            checkedBorderColor = PrimaryGold,
+                            uncheckedThumbColor = PrimaryGold,
+                            uncheckedTrackColor = PrimaryWhite,
+                            uncheckedBorderColor = PrimaryGold
+
+                        )
+                    )
+                }
+            }
+            val imagePickerLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.GetMultipleContents()
+            ) { uris: List<Uri> ->
+                vm.onImageSelected(uris)
+            }
+
+            ImageUploadSection(
+                selectedUris    = uiState.selectedImageUris,
+                savedPaths      = uiState.savedImagePaths,
+                onPickImages    = { imagePickerLauncher.launch("image/*") },
+                onRemoveNew     = vm::removeNewImage,
+                onRemoveSaved   = vm::removeSavedImage
+            )
         }
 
         // ── FIXED BOTTOM BUTTON ────────────────────────────────────────
@@ -236,13 +288,7 @@ fun AddCases(
                     color = PrimaryBlack
                 )
             } else {
-                Text(
-                    text = "Add Case",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryBlack
-                )
+                Text("Add Case", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -270,124 +316,99 @@ fun ImagePickerField(
         }
     }
 
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Select Image Source", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-            text = { Text("Choose where you want to import the case document/image from.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                    galleryLauncher.launch("image/*")
-                }) {
-                    Text("Gallery", color = PrimaryGold, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                    cameraLauncher.launch(null)
-                }) {
-                    Text("Camera", color = PrimaryGold, fontWeight = FontWeight.Bold)
-                }
-            }
-        )
-    }
+}
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(90.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .border(
-                1.5.dp,
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                RoundedCornerShape(10.dp)
-            )
-            .clickable { showDialog = true },
-        contentAlignment = Alignment.Center
+@Composable
+fun ImageUploadSection(
+    selectedUris: List<Uri>,
+    savedPaths: List<String>,
+    onPickImages: () -> Unit,
+    onRemoveNew: (Uri) -> Unit,
+    onRemoveSaved: (String) -> Unit
+){
+
+    val totalCount = selectedUris.size + savedPaths.size
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (!selectedImageUri.isNullOrEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Button(
+            onClick = onPickImages,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, PrimaryGold),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryWhite
+            )
+        ) {
+            Column(
+                horizontalAlignment =  Alignment.CenterHorizontally
             ) {
-                AsyncImage(
-                    model = selectedImageUri,
-                    contentDescription = "Selected Case Image",
-                    modifier = Modifier
-                        .size(70.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
+                Icon(
+                    Icons.Default.Image,
+                    contentDescription = "Chose Image",
+                    modifier = Modifier.fillMaxSize(.25f),
+                    tint = PrimaryGold
                 )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Image Attached", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Black)
-                    Text("Tap to change image", fontSize = 13.sp, color = Color.Black.copy(alpha = 0.5f))
-                }
-            }
-        } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(text = "📎", fontSize = 18.sp)
                 Text(
-                    text = "Attach Document / Case Image",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black.copy(alpha = 0.6f)
+                    if (totalCount == 0) "Upload Images"
+                    else "Add More Images ($totalCount selected)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PrimaryGold
                 )
+            }
+
+        }
+
+        if (totalCount > 0){
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Already saved images
+                items(savedPaths, key = { it }) { path ->
+                    ImageThumb(
+                        painter = rememberAsyncImagePainter(File(path)),
+                        onRemove = { onRemoveSaved(path) }
+                    )
+                }
+                // Newly picked
+                items(selectedUris, key = { it.toString() }) { uri ->
+                    ImageThumb(
+                        painter = rememberAsyncImagePainter(uri),
+                        onRemove = { onRemoveNew(uri) }
+                    )
+                }
             }
         }
     }
 }
 
-private fun saveBitmapToCache(context: android.content.Context, bitmap: android.graphics.Bitmap): Uri {
-    val cacheFile = java.io.File(context.cacheDir, "case_image_${System.currentTimeMillis()}.jpg")
-    val fos = java.io.FileOutputStream(cacheFile)
-    bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, fos)
-    fos.flush()
-    fos.close()
-    return androidx.core.content.FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.fileprovider",
-        cacheFile
-    )
-}
-
 @Composable
-fun CustomOutlinedTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth(),
-        label = {
-            Text(
-                text = label,
-                fontSize = 15.sp,
-                color = Color.Black.copy(alpha = 0.5f)
-            )
-        },
-        textStyle = TextStyle(
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Normal,
-            color = Color.Black
-        ),
-        shape = RoundedCornerShape(10.dp),
-        singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = PrimaryGold,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-            focusedLabelColor = PrimaryGold,
-            cursorColor = PrimaryGold
+private fun ImageThumb(painter: Painter, onRemove: () -> Unit) {
+    Box(modifier = Modifier.size(72.dp)) {
+        Image(
+            painter = painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(8.dp))
         )
-    )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(2.dp)
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(PrimaryBlack.copy(alpha = 0.6f))
+                .clickable { onRemove() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Remove",
+                tint = PrimaryWhite,
+                modifier = Modifier.size(12.dp)
+            )
+        }
+    }
 }

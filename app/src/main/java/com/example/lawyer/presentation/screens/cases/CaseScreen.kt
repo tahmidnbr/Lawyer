@@ -40,9 +40,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.lawyer.logic.vm.CaseListVm
 import com.example.lawyer.presentation.LoadingIcon
+import com.example.lawyer.presentation.extra.CustomTextField
 import com.example.lawyer.presentation.model.CaseWithHearings
 import com.example.lawyer.presentation.screens.home.CaseFolderCover
-import com.example.lawyer.presentation.screens.home.CustomTextField
 import com.example.lawyer.ui.theme.PrimaryBlack
 import com.example.lawyer.ui.theme.PrimaryGold
 import com.example.lawyer.ui.theme.PrimaryGreen
@@ -77,15 +77,13 @@ fun CaseScreen(
     }
 
     if (uiState.isLoading){
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(PrimaryWhite.copy(.8f)),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
             LoadingIcon()
         }
+        return
     }
 }
 
@@ -200,7 +198,7 @@ fun FilteredCases(
 
     Row(
         modifier = Modifier
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp)
             .fillMaxWidth()
             .height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -240,50 +238,56 @@ fun FilteredCases(
                     }
                 )
                 ,
-            verticalArrangement = Arrangement.SpaceBetween
+            //verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    "Case: ${case.caseNo}",
+                    "${case.plaintiff} vs ${case.defendant}",
                     style = MaterialTheme.typography.headlineMedium,
                     fontSize = 15.sp,
                     color = PrimaryBlack
                 )
 
-                Text(
-                    "${case.plaintiff} vs ${case.defendant}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = PrimaryBlack.copy(.5f)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "CASE NO. ${case.caseNo}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = PrimaryBlack.copy(.5f)
+                    )
+
+                    if (isOnCaseScreen){
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(12.dp),
+                                tint = PrimaryGreen
+                            )
+
+                            Text(
+                                "${dateFormatter.format(Date(caseHearing.hearings.lastOrNull()?.hearingDate ?: 31536000000)) }",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                }
 
                 Text(
                     caseHearing.hearings.lastOrNull()?.purposeOrProceeding ?: "Case Hearings",
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = if (isOnCaseScreen)4 else 2
                 )
-
-            }
-
-            if (isOnCaseScreen){
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(12.dp),
-                        tint = PrimaryGreen
-                    )
-
-                    Text(
-                        "Next hearing: ${dateFormatter.format(Date(caseHearing.hearings.lastOrNull()?.hearingDate ?: 31536000000)) }",
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
             }
         }
     }
