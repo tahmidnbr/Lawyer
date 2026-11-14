@@ -1,6 +1,7 @@
 package com.example.lawyer.presentation.screens.sub
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,7 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -32,14 +32,13 @@ import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,6 +58,7 @@ import androidx.navigation.NavController
 import com.example.lawyer.logic.vm.CaseDetailVm
 import com.example.lawyer.logic.vm.HearingVm
 import com.example.lawyer.presentation.AlertDialog
+import com.example.lawyer.presentation.LoadingIcon
 import com.example.lawyer.presentation.UiEvent
 import com.example.lawyer.presentation.model.Hearing
 import com.example.lawyer.ui.theme.DangerRed
@@ -94,7 +94,15 @@ fun CaseDetails(
         }
     }
 
-    if (uiState.isLoading) return
+    if (uiState.isLoading) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LoadingIcon()
+        }
+        return
+    }
 
     val hearings = hearingState.hearings  // already sorted by date DESC from DAO
 
@@ -103,7 +111,7 @@ fun CaseDetails(
             .navigationBarsPadding()
             .fillMaxSize()
             .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(bottom = 32.dp),
+        //contentPadding = PaddingValues(bottom = 32.dp),
     ) {
         item {
             CaseHeadings(
@@ -111,10 +119,43 @@ fun CaseDetails(
                 caseNo = case?.caseNo ,
                 title = "${case?.plaintiff} vs ${case?.defendant}",
                 isPriority = case?.isPriority,
-                onEdit = { navController.navigate("write/$caseId") },
+                onEdit = { navController.navigate("edit/$caseId") },
                 onStar = {detailVm.togglePriority()},
                 onShare = {}
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        item {
+            OutlinedButton(
+                //enabled = uiState.isFormValid && !uiState.isLoading,
+                onClick = {
+                    navController.navigate("attachments/$caseId")
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, PrimaryGreen)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        Icons.Outlined.Attachment,
+                        contentDescription = "Attached Images",
+                        modifier = Modifier
+                            .size(20.dp),
+                        tint = PrimaryGreen
+                    )
+                    Text(
+                        "Attachments",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = PrimaryGreen
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -184,41 +225,12 @@ fun CaseDetails(
                 isLatest   = index == 0,
                 isLast     = index == hearings.lastIndex,
                 onDelete   = { hearingVm.deleteHearing(hearing.id) },
+                onEdit = {
+                    navController.navigate("write/$caseId?hearingId=${hearing.id}")
+                }
             )
         }
 
-        item {
-            Spacer(modifier = Modifier.height(48.dp))
-
-            Button(
-                //enabled = uiState.isFormValid && !uiState.isLoading,
-                onClick = {
-                    navController.navigate("attachments")
-                },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryGreen
-                )
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(
-                        Icons.Outlined.Attachment,
-                        contentDescription = "Attached Images",
-                        modifier = Modifier
-                            .size(20.dp),
-                    )
-                    Text(
-                        "Attachments",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-        }
     }
 }
 @Composable
@@ -370,6 +382,7 @@ fun HearingCard(
     isLast: Boolean,
     onDelete: () -> Unit,
     hearing: Hearing,
+    onEdit: () -> Unit,
 ) {
     val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
@@ -414,7 +427,7 @@ fun HearingCard(
         Card(
             modifier = Modifier
                 .clickable{
-
+                    onEdit()
                 }
                 .weight(.9f)
                 .padding(bottom = if (isLast) 0.dp else 12.dp),

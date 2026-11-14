@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.lawyer.logic.vm.CaseListVm
 import com.example.lawyer.logic.vm.DateVm
+import com.example.lawyer.presentation.LoadingIcon
 import com.example.lawyer.presentation.screens.cases.FilteredCases
 import com.example.lawyer.ui.theme.PrimaryBlack
 import com.example.lawyer.ui.theme.PrimaryGold
@@ -134,6 +135,16 @@ fun DateScreen(
         "January","February","March","April","May","June",
         "July","August","September","October","November","December"
     )
+
+    if (uiState.isLoading){
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LoadingIcon()
+        }
+        return
+    }
 
     LazyColumn(
         modifier = Modifier

@@ -194,67 +194,6 @@ fun SearchAdd(navController: NavController) {
 }
 
 @Composable
-fun CustomTextField(
-    value : String,
-    onValueChange: (String) -> Unit,
-    modifier : Modifier = Modifier,
-    placeholder: String
-){
-    val customText = MaterialTheme.typography.titleMedium.copy(
-        fontWeight = FontWeight.Normal
-    )
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        textStyle = customText,
-        singleLine = true,
-        modifier = modifier,
-
-        decorationBox = { innerFiled ->
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.5.dp, PrimaryBlack.copy(.05f), RoundedCornerShape(12.dp))
-            ){
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f),
-                        contentAlignment = Alignment.CenterStart
-                    ){
-                        if (value.isEmpty()){
-                            Text(
-                                placeholder,
-                                style = customText,
-                                color = PrimaryBlack.copy(.5f)
-                            )
-                        }
-
-                        innerFiled()
-                    }
-
-                    if (value.isNotEmpty()) {
-                        Icon(
-                            imageVector = Icons.Default.Clear, // Changed to Clear since it only shows when text is present
-                            contentDescription = "Clear text",
-                            tint = PrimaryBlack.copy(.5f),
-                            modifier = Modifier
-                                .clickable(onClick = { onValueChange("")})
-                                .size(15.dp)
-                        )
-
-                    }
-                }
-            }
-        }
-    )
-}
-@Composable
 fun CaseFolderCover(
     modifier: Modifier = Modifier,
     color: Color = PrimaryGold,

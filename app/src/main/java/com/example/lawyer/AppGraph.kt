@@ -1,8 +1,10 @@
 package com.example.lawyer
 
+import android.net.Uri
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,11 +22,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.lawyer.presentation.Bottombar
 import com.example.lawyer.presentation.CommonTopBar
 import com.example.lawyer.presentation.Topbar
@@ -41,6 +45,9 @@ import com.example.lawyer.presentation.screens.sub.WriteCase
 import com.example.lawyer.presentation.screens.cases.CaseScreen
 import com.example.lawyer.presentation.screens.dates.DateScreen
 import com.example.lawyer.presentation.screens.sub.Attachments
+import com.example.lawyer.presentation.screens.sub.EditCases
+import com.example.lawyer.presentation.screens.sub.ImageViewer
+import com.example.lawyer.ui.theme.PrimaryBlack
 import com.example.lawyer.ui.theme.PrimaryWhite
 import org.koin.compose.koinInject
 
@@ -135,9 +142,21 @@ fun ScreenGraph(modifier: Modifier) {
         composable("add") {
             Scaffold(
                 containerColor = PrimaryWhite,
-                topBar = { CommonTopBar(innerNavController) }
+                topBar = { CommonTopBar(navController = innerNavController) }
             ) { subScreen ->
                 AddCases(
+                    modifier = Modifier.padding(subScreen),
+                    navController = innerNavController
+                )
+            }
+        }
+
+        composable("edit/{caseId}") {
+            Scaffold(
+                containerColor = PrimaryWhite,
+                topBar = { CommonTopBar(navController = innerNavController) }
+            ) {subScreen ->
+                EditCases(
                     modifier = Modifier.padding(subScreen),
                     navController = innerNavController
                 )
@@ -148,7 +167,11 @@ fun ScreenGraph(modifier: Modifier) {
             val caseId = backStackEntry.arguments?.getString("caseId")?.toLongOrNull()
             Scaffold(
                 containerColor = PrimaryWhite,
-                topBar = { CommonTopBar(innerNavController) }
+                topBar = { CommonTopBar(
+                    modifier = Modifier
+                        .background(PrimaryWhite),
+                    navController = innerNavController
+                ) }
             ) { subScreen ->
                 if (caseId != null) {
                     CaseDetails(
@@ -160,14 +183,27 @@ fun ScreenGraph(modifier: Modifier) {
             }
         }
 
-        composable("write/{caseId}") { backStackEntry ->
-            val caseId = backStackEntry.arguments?.getString("caseId")?.toLongOrNull()
+        composable(
+            "write/{caseId}?hearingId={hearingId}",
+            arguments = listOf(
+                navArgument("caseId") { type = NavType.StringType },
+                navArgument("hearingId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+            ) { backStackEntry ->
+            val caseId    = backStackEntry.arguments?.getString("caseId")?.toLongOrNull()
+            val hearingId = backStackEntry.arguments?.getString("hearingId")?.toLongOrNull()
             Scaffold(
                 containerColor = PrimaryWhite,
                 topBar = {
                     if (caseId != null) {
                         CommonTopBar(
-                            innerNavController,
+                            modifier = Modifier
+                                .background(PrimaryWhite),
+                            navController = innerNavController,
                             content = { CaseTop(navController = innerNavController) }
                         )
                     }
@@ -177,13 +213,43 @@ fun ScreenGraph(modifier: Modifier) {
             }
         }
 
-        composable("attachments") { backStackEntry ->
+
+        composable("attachments/{caseId}") { backStackEntry ->
+            val caseId = backStackEntry.arguments?.getString("caseId")?.toLongOrNull()
             Scaffold(
                 containerColor = PrimaryWhite,
-                topBar = {CommonTopBar(innerNavController)}
+                topBar = {CommonTopBar(
+                    modifier = Modifier
+                        .background(PrimaryWhite),
+                    navController = innerNavController
+                )}
             ) { subScreen ->
-                Attachments(
-                    modifier = Modifier.padding(subScreen)
+                if (caseId != null){
+                    Attachments(
+                        modifier = Modifier.padding(subScreen),
+                        navController = innerNavController
+                    )
+                }
+            }
+        }
+
+        composable("image_viewer/{imagePath}") {backStackEntry ->
+            val imagePath = Uri.decode(
+                backStackEntry.arguments?.getString("imagePath") ?: ""
+            )
+
+            Scaffold(
+                containerColor = PrimaryBlack,
+                topBar = {CommonTopBar(
+                    modifier = Modifier
+                        .background(PrimaryBlack),
+                    iconTint = PrimaryWhite,
+                    navController = innerNavController
+                )}
+            ) {subScreen ->
+                ImageViewer(
+                    modifier = Modifier.padding(subScreen),
+                    imagePath = imagePath
                 )
             }
         }

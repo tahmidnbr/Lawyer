@@ -5,6 +5,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,8 +18,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,7 +43,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,14 +54,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.lawyer.logic.vm.CaseFormVm
 import com.example.lawyer.presentation.UiEvent
-import com.example.lawyer.presentation.screens.home.CustomTextField
+import com.example.lawyer.presentation.extra.CourtDropdown
+import com.example.lawyer.presentation.extra.CustomTextField
 import com.example.lawyer.ui.theme.PrimaryBlack
 import com.example.lawyer.ui.theme.PrimaryGold
 import com.example.lawyer.ui.theme.PrimaryGreen
 import com.example.lawyer.ui.theme.PrimaryWhite
 import org.koin.androidx.compose.koinViewModel
+import java.io.File
 
 @Composable
 fun AddCases(
@@ -127,11 +140,11 @@ fun AddCases(
                 onValueChange = vm::onRepresentingChange,
                 placeholder = "Representing"
             )
-            CustomTextField(
-                value = uiState.courtName,
-                onValueChange = vm::onCourtNameChange ,
-                placeholder = "Court"
+            CourtDropdown(
+                selectedCourt = uiState.courtName,
+                onCourtSelected = vm::onCourtNameChange
             )
+
             CustomTextField(
                 value = uiState.caseType,
                 onValueChange = vm::onCaseTypeChange,
@@ -193,8 +206,19 @@ fun AddCases(
                     )
                 }
             }
+            val imagePickerLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.GetMultipleContents()
+            ) { uris: List<Uri> ->
+                vm.onImageSelected(uris)
+            }
 
-            ImageUploadSection()
+            ImageUploadSection(
+                selectedUris    = uiState.selectedImageUris,
+                savedPaths      = uiState.savedImagePaths,
+                onPickImages    = { imagePickerLauncher.launch("image/*") },
+                onRemoveNew     = vm::removeNewImage,
+                onRemoveSaved   = vm::removeSavedImage
+            )
         }
 
         Button(
@@ -223,24 +247,22 @@ fun AddCases(
 }
 
 @Composable
-fun ImageUploadSection(){
+fun ImageUploadSection(
+    selectedUris: List<Uri>,
+    savedPaths: List<String>,
+    onPickImages: () -> Unit,
+    onRemoveNew: (Uri) -> Unit,
+    onRemoveSaved: (String) -> Unit
+){
 
-    var selectedImageUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetMultipleContents()
-    ) { uris: List<Uri> ->
-        selectedImageUris = uris
-    }
+    val totalCount = selectedUris.size + savedPaths.size
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Button(
-            onClick = {
-                imagePickerLauncher.launch("image/*")
-            },
+            onClick = onPickImages,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
             border = BorderStroke(1.dp, PrimaryGold),
@@ -258,8 +280,8 @@ fun ImageUploadSection(){
                     tint = PrimaryGold
                 )
                 Text(
-                    if (selectedImageUris.isEmpty()) "Upload Images"
-                    else "Change Images (${selectedImageUris.size} selected) ",
+                    if (totalCount == 0) "Upload Images"
+                    else "Add More Images ($totalCount selected)",
                     style = MaterialTheme.typography.bodySmall,
                     color = PrimaryGold
                 )
@@ -267,12 +289,53 @@ fun ImageUploadSection(){
 
         }
 
-        if (selectedImageUris.isNotEmpty()){
-            Text(
-                text = "${selectedImageUris.size} images ready to upload",
-                style = MaterialTheme.typography.bodySmall,
-                color = PrimaryWhite,
-                modifier = Modifier.padding(horizontal = 4.dp)
+        if (totalCount > 0){
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Already saved images
+                items(savedPaths, key = { it }) { path ->
+                    ImageThumb(
+                        painter = rememberAsyncImagePainter(File(path)),
+                        onRemove = { onRemoveSaved(path) }
+                    )
+                }
+                // Newly picked
+                items(selectedUris, key = { it.toString() }) { uri ->
+                    ImageThumb(
+                        painter = rememberAsyncImagePainter(uri),
+                        onRemove = { onRemoveNew(uri) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ImageThumb(painter: Painter, onRemove: () -> Unit) {
+    Box(modifier = Modifier.size(72.dp)) {
+        Image(
+            painter = painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(8.dp))
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(2.dp)
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(PrimaryBlack.copy(alpha = 0.6f))
+                .clickable { onRemove() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Remove",
+                tint = PrimaryWhite,
+                modifier = Modifier.size(12.dp)
             )
         }
     }

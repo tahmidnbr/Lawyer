@@ -1,8 +1,10 @@
 package com.example.lawyer.logic.vm
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lawyer.logic.ImageStorage
 import com.example.lawyer.logic.repo.CaseRepository
 import com.example.lawyer.presentation.UiEvent
 import com.example.lawyer.presentation.model.CaseWithHearings
@@ -30,6 +32,7 @@ data class CaseDetailUiState(
 
 class CaseDetailVm(
     private val repo: CaseRepository,
+    private val imageStorage: ImageStorage,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -62,6 +65,34 @@ class CaseDetailVm(
             runCatching { repo.deleteCase(caseId) }
                 .onSuccess  { _events.send(UiEvent.NavigateBack) }
                 .onFailure  { _events.send(UiEvent.ShowToast("Failed to delete case")) }
+        }
+    }
+
+    fun addImages(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+
+        viewModelScope.launch {
+            val currentCase = uiState.value.case ?: return@launch
+
+            runCatching {
+                // Copy selected images into internal storage
+                val newPaths = imageStorage.saveImages(uris)
+
+                // Append new paths to existing attachments
+                val updatedCase = currentCase.copy(
+                    imagePaths = currentCase.imagePaths + newPaths
+                )
+
+                // Persist changes in Room
+                repo.updateCase(updatedCase)
+
+            }.onFailure { e ->
+                _events.send(
+                    UiEvent.ShowToast(
+                        e.message ?: "Failed to add images"
+                    )
+                )
+            }
         }
     }
 }

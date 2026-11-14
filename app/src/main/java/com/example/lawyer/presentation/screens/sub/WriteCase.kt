@@ -34,12 +34,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.lawyer.logic.vm.HearingVm
+import com.example.lawyer.presentation.LoadingIcon
 import com.example.lawyer.presentation.UiEvent
 import com.example.lawyer.ui.theme.DangerRed
 import com.example.lawyer.ui.theme.PrimaryBlack
@@ -57,12 +59,19 @@ fun WriteCase(
     modifier: Modifier = Modifier,
     vm: HearingVm  = koinViewModel ()
 ){
-    val uiState by vm.uiState.collectAsStateWithLifecycle()
     val formState by vm.formState.collectAsStateWithLifecycle()
+    val uiState by vm.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        vm.openAddForm()
+    if (uiState.isLoading){
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LoadingIcon()
+        }
+        return
     }
+
 
     LazyColumn(
         modifier = modifier
@@ -113,15 +122,14 @@ fun CaseTop(
             modifier = Modifier.weight(1f)
         )
 
-        if (formState.purposeOrProceeding.isNotBlank()){
+        if (formState.isValid) {
             Icon(
                 imageVector = Icons.Default.Done,
-                contentDescription = "Save Proceeding",
+                contentDescription = if (formState.editingId != null) "Update" else "Save",
                 modifier = Modifier
                     .size(15.dp)
-                    .clickable(
-                        onClick = {vm.saveHearing()}
-                    )
+                    .clickable { vm.saveHearing() },
+                tint = PrimaryGold
             )
         }
     }
@@ -131,13 +139,16 @@ fun CaseTop(
 fun WritingBody(
     description: String,
     onDescriptionChange: (String) -> Unit,
-    proceedingDate:  Long,
+    proceedingDate:  Long?,
     onDateChange: (Long) -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
 
     val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
-    val formattedDate = remember(proceedingDate) { dateFormatter.format(Date(proceedingDate)) }
+    val formattedDate = remember(proceedingDate) {
+        if (proceedingDate != null) dateFormatter.format(Date(proceedingDate))
+        else null
+    }
 
 
     Column(
@@ -162,20 +173,13 @@ fun WritingBody(
                 Icon(
                     imageVector = Icons.Default.CalendarToday,
                     contentDescription = "Next Hearing",
-                    modifier = Modifier.size(15.dp)
+                    modifier = Modifier.size(15.dp),
+                    tint = if (proceedingDate == null) DangerRed else PrimaryBlack
                 )
                 Text(
-                    "Select Hearing Date: $formattedDate",
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-
-            if (proceedingDate <= System.currentTimeMillis()){
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = "Set Hearing Must",
-                    tint = DangerRed,
-                    modifier = Modifier.size(15.dp)
+                    "Select Hearing Date: ${if (proceedingDate == null) " " else formattedDate}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (proceedingDate == null) DangerRed else PrimaryBlack
                 )
             }
 
@@ -184,7 +188,9 @@ fun WritingBody(
         BasicTextField(
             value = description,
             onValueChange = onDescriptionChange,
-            textStyle = MaterialTheme.typography.labelMedium,
+            textStyle = MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.Normal
+            ),
             modifier = Modifier
                 .height(160.dp),
             decorationBox = { innerField ->
@@ -200,8 +206,9 @@ fun WritingBody(
                             if (description.isEmpty()) {
                                 Text(
                                     "Write ",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = PrimaryBlack.copy(.5f)
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = PrimaryBlack.copy(.5f),
+                                    fontWeight = FontWeight.Normal
                                 )
                             }
                             innerField()
@@ -213,7 +220,7 @@ fun WritingBody(
 
         if (showDatePicker){
             DatePickerModal(
-                initialDate = proceedingDate,
+                initialDate    = proceedingDate ?: System.currentTimeMillis(),
                 onDateSelected = { timestampMillis ->
                     timestampMillis?.let { onDateChange(it) }
                 },

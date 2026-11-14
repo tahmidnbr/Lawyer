@@ -144,15 +144,16 @@ fun Topbar(){
 
 @Composable
 fun CommonTopBar(
+    modifier: Modifier = Modifier,
     navController: NavController,
+    iconTint: Color = PrimaryBlack,
     content : @Composable () -> Unit = {}
 ){
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxHeight(.1f)
-            .background(PrimaryWhite)
             .fillMaxWidth()
             .statusBarsPadding()
 
@@ -167,7 +168,8 @@ fun CommonTopBar(
                     }
                 )
                 .padding(horizontal = 16.dp, vertical = 8.dp)
-                .size(18.dp)
+                .size(18.dp),
+            tint = iconTint
         )
 
         content()
