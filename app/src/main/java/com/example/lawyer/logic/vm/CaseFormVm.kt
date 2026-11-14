@@ -24,9 +24,10 @@ data class CaseFormUiState(
     val defendant: String = "",
     val representing: String = "",
     val courtName: String = "",
-    val caseFee: String = "",
+    val caseFee: String = "",       // Kept as String for text input flexibility
     val caseType: String = "",
     val isPriority: Boolean = false,
+    val selectedImageUri: String? = null, // Stored as String? for Room compatibility
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 

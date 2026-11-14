@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +31,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
@@ -48,6 +51,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -74,71 +78,111 @@ fun AddCases(
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var checked by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         vm.events.collect { event ->
-            when(event) {
+            when (event) {
                 is UiEvent.NavigateTo -> {
-                    navController.navigate(event.route){
-                        popUpTo("add") { inclusive = true}
+                    navController.navigate(event.route) {
+                        popUpTo("add") { inclusive = true }
                     }
                 }
-
                 is UiEvent.ShowToast -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 }
-
                 else -> Unit
             }
-
         }
     }
 
     Column(
         modifier = modifier
-            .navigationBarsPadding()
             .fillMaxSize()
             .padding(horizontal = 16.dp),
     ) {
+        // ── FIXED TOP HEADER (Title & Priority Switch) ──────────────────
         Column(
-            modifier = Modifier
-                .weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 "Case Details",
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth(),
+                color = Color.Black,
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineSmall,
-                fontSize = 20.sp,
+                fontSize = 26.sp,
                 letterSpacing = 1.sp
             )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "Make as priority",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black
+                )
+
+                Switch(
+                    checked = uiState.isPriority,
+                    onCheckedChange = { vm.onPriorityToggle() },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = PrimaryGold,
+                        checkedTrackColor = PrimaryGold.copy(alpha = 0.5f)
+                    )
+                )
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(bottom = 4.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            )
+        }
+
+        // ── SCROLLABLE FORM FIELDS ──────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Spacer(Modifier.height(4.dp))
 
             CustomTextField(
                 value = uiState.plaintiff,
                 onValueChange = vm::onPlaintiffChange,
-                placeholder = "Plaintiff"
+                label = "Plaintiff"
             )
+
             Text(
                 "vs",
                 style = MaterialTheme.typography.headlineSmall,
-                fontSize = 18.sp,
-                modifier = Modifier
-                    .fillMaxWidth(),
-                textAlign = TextAlign.Center
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                color = Color.Black
             )
+
             CustomTextField(
                 value = uiState.defendant,
                 onValueChange = vm::onDefendantChange,
-                placeholder = "Defendant"
+                label = "Defendant"
             )
 
             CustomTextField(
                 value = uiState.representing,
                 onValueChange = vm::onRepresentingChange,
-                placeholder = "Representing"
+                label = "Representing"
             )
             CourtDropdown(
                 selectedCourt = uiState.courtName,
@@ -148,23 +192,24 @@ fun AddCases(
             CustomTextField(
                 value = uiState.caseType,
                 onValueChange = vm::onCaseTypeChange,
-                placeholder = "Case Type"
+                label = "Case Type"
             )
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 CustomTextField(
                     value = uiState.caseFee,
                     onValueChange = vm::onCaseFeeChange,
                     modifier = Modifier.weight(1f),
-                    placeholder = "Case Fee"
+                    label = "Case Fee"
                 )
                 CustomTextField(
                     value = uiState.caseNo,
                     onValueChange = vm::onCaseNoChange,
                     modifier = Modifier.weight(1f),
-                    placeholder = "Case No."
+                    label = "Case No."
                 )
             }
 
@@ -221,27 +266,54 @@ fun AddCases(
             )
         }
 
+        // ── FIXED BOTTOM BUTTON ────────────────────────────────────────
         Button(
             enabled = uiState.isFormValid && !uiState.isLoading,
             onClick = vm::saveCase,
             modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryGold
+                containerColor = PrimaryGold,
+                contentColor = PrimaryBlack,
+                disabledContainerColor = PrimaryGold.copy(alpha = 0.4f),
+                disabledContentColor = PrimaryBlack.copy(alpha = 0.5f)
             )
         ) {
-            if (uiState.isLoading){
+            if (uiState.isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
-                    color = PrimaryGold
+                    color = PrimaryBlack
                 )
             } else {
                 Text("Add Case", style = MaterialTheme.typography.bodySmall)
             }
         }
+    }
+}
+@Composable
+fun ImagePickerField(
+    selectedImageUri: String?,
+    onImageSelected: (Uri?) -> Unit
+) {
+    val context = LocalContext.current
+    var showDialog by remember { mutableStateOf(false) }
 
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        onImageSelected(uri)
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        bitmap?.let {
+            val uri = saveBitmapToCache(context, it)
+            onImageSelected(uri)
+        }
     }
 
 }
